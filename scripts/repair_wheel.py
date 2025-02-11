@@ -45,7 +45,7 @@ def main():
         # use the platform specific repair tool first
         if os_ == "linux":
             # use path from cibuildwheel which allows auditwheel to create
-            # Rtree.libs/libspatialindex-*.so.*
+            # rtree.libs/libspatialindex-*.so.*
             cibw_lib_path = "/project/rtree/lib"
             if os.environ.get("LD_LIBRARY_PATH"):  # append path
                 os.environ["LD_LIBRARY_PATH"] += f"{os.pathsep}{cibw_lib_path}"
@@ -55,36 +55,31 @@ def main():
                 ["auditwheel", "repair", "-w", str(tmpdir), str(file)], check=True
             )
         elif os_ == "macos":
-            subprocess.run(
-                [
-                    "delocate-wheel",
-                    # "--require-archs",
-                    # "arm64,x86_64",
-                    "-w",
-                    str(tmpdir),
-                    str(file),
-                ],
-                check=True,
-            )
+            # fmt: off
+            args = [
+                "delocate-wheel",
+                # "--require-archs", "arm64,x86_64",
+                "-w", str(tmpdir),
+                str(file),
+            ]
+            # fmt: on
+            subprocess.run(args, check=True)
         elif os_ == "windows":
             # no specific tool, just copy
             shutil.copyfile(file, tmpdir / file.name)
         (file,) = tmpdir.glob("*.whl")
 
         # make this a py3 wheel
-        subprocess.run(
-            [
-                "wheel",
-                "tags",
-                "--python-tag",
-                "py3",
-                "--abi-tag",
-                "none",
-                "--remove",
-                str(file),
-            ],
-            check=True,
-        )
+        # fmt: off
+        args = [
+            "wheel", "tags",
+            "--python-tag", "py3",
+            "--abi-tag", "none",
+            "--remove",
+            str(file),
+        ]
+        # fmt: on
+        subprocess.run(args, check=True)
         (file,) = tmpdir.glob("*.whl")
         # unpack
         subprocess.run(["wheel", "unpack", file.name], cwd=tmpdir, check=True)
@@ -96,7 +91,7 @@ def main():
 
         if os_ == "linux":
             # This is auditwheel's libs, which needs post-processing
-            libs_dir = unpackdir / "Rtree.libs"
+            libs_dir = unpackdir / "rtree.libs"
             lsidx_list = list(libs_dir.glob("libspatialindex*.so*"))
             assert len(lsidx_list) == 1, list(libs_dir.iterdir())
             lsidx = lsidx_list[0]
